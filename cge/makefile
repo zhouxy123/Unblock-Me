@@ -1,4 +1,4 @@
-CXX = gcc
+CXX = g++
 CPPFLAGS = -Wall -O3 -D_XOPEN_SOURCE_EXTENDED
 LDFLAGS = -lncurses
 all: 

@@ -44,7 +44,7 @@ int detect_exceed(Block b1);
 int detect_overlap(Block b1, Block b2);
 int if_valid(vector<Block> blocks);
 
-int main()
+/*int main()
 {
     blocks_init();
 
@@ -61,19 +61,20 @@ int main()
     cout << "block1 and block2: overlap:" << detect_overlap(blocks[1], blocks[2]) << endl;
 
     cout << "global status: " << if_valid(blocks) << endl;
-    /*
+    
     Block block1(0, 0, 2, 0);
     Block block2(0, 1, 3, 0);
     Block block3(0, 3, 2, 1);
     Block block4(0, 5, 2, 0);
     Block block5(2, 3, 2, 0);
-    */
+    
     // block1.set(0, 0, 3, 1);
     // cout << "x:" << block1.x << " y:" << block1.y << " length:" << block1.length << " direction:" << block1.direction << endl;
 
     // block1.move(2);
     // cout << "x:" << block1.x << " y:" << block1.y << " length:" << block1.length << " direction:" << block1.direction << endl;
-}
+}*/
+
 
 // 初始化所有块
 void blocks_init()
@@ -214,5 +215,3 @@ int if_valid(vector<Block> blocks)
 
     return status;
 }
-
-//熊胆至金方
