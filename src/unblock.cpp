@@ -1,27 +1,13 @@
 #include <iostream>
 #include <cstdlib>
 #include <vector>
+#include "unblock.h"
+#include <fstream>
+#include <cstring>
 using namespace std;
 
-class Block
-{
-public:
-    int id;
-    int x;
-    int y;
-    int length;    // 2 or 3
-    int direction; // 0:横  1:竖
-
-    Block(int ID, int X, int Y, int len, int dir)
-    {
-        this->id = ID;
-        this->x = X;
-        this->y = Y;
-        this->length = len;
-        this->direction = dir;
-    }
-    void move(int step);
-};
+vector<Block> blocks;
+//全局变量：.cpp中定义，.h中声明(extern)
 
 //移动（范围：-4～+4）
 void Block::move(int step)
@@ -35,62 +21,38 @@ void Block::move(int step)
         y += step;
 }
 
-/*
-成功：主块(编号为0)x=4，且处于valid状态（块之间无冲突）
-*/
-vector<Block> blocks;
-void blocks_init();
-int detect_exceed(Block b1);
-int detect_overlap(Block b1, Block b2);
-int if_valid(vector<Block> blocks);
-
-/*int main()
-{
-    blocks_init();
-
-    // 用迭代器遍历
-    for (vector<Block>::iterator it = blocks.begin(); it != blocks.end(); it++)
-    {
-        cout << "block" << (*it).id << ": x=" << (*it).x << " y=" << (*it).y << " length=" << (*it).length << " direction=" << (*it).direction << endl;
-    }
-
-    cout << "block0: exceed:" << detect_exceed(blocks[0]) << endl;
-    cout << "block1: exceed:" << detect_exceed(blocks[1]) << endl;
-    cout << "block2: exceed:" << detect_exceed(blocks[2]) << endl;
-
-    cout << "block1 and block2: overlap:" << detect_overlap(blocks[1], blocks[2]) << endl;
-
-    cout << "global status: " << if_valid(blocks) << endl;
-    
-    Block block1(0, 0, 2, 0);
-    Block block2(0, 1, 3, 0);
-    Block block3(0, 3, 2, 1);
-    Block block4(0, 5, 2, 0);
-    Block block5(2, 3, 2, 0);
-    
-    // block1.set(0, 0, 3, 1);
-    // cout << "x:" << block1.x << " y:" << block1.y << " length:" << block1.length << " direction:" << block1.direction << endl;
-
-    // block1.move(2);
-    // cout << "x:" << block1.x << " y:" << block1.y << " length:" << block1.length << " direction:" << block1.direction << endl;
-}*/
-
-
 // 初始化所有块
-void blocks_init()
+void blocks_init(char *level_id)
 {
-    Block block0(0, 0, 2, 2, 0); // 主块：编号为0，初始位置(0,2)，长度为2，横向
-    blocks.push_back(block0);
-    int block_num;
-    cout << "输入块数(除主块外):" << endl;
-    cin >> block_num;
-    int x, y, length, direction;
-    for (int i = 1; i <= block_num; i++)
+    ifstream ifs;
+    ifs.open("./data/leveldata.txt",ios::in);
+    //对于可执行文件的相对路径
+ 
+    if (!ifs.is_open())
     {
-        cout << "初始化block" << i << ": (x, y, length, direction)" << endl;
-        cin >> x >> y >> length >> direction;
-        Block block(i, x, y, length, direction);
-        blocks.push_back(block);
+        cout << "read fail." << endl;
+    }
+  
+    char buf[5] = {0};
+    
+    int i=0;
+    int block_num;
+    while (ifs >> buf)
+    {
+        if(strcmp(buf, level_id)==0)
+        {
+            ifs >> buf;
+            block_num = atoi(buf);
+            while(i < block_num)
+            {
+                ifs >> buf;
+                Block block(i, buf[0]-'0', buf[1]-'0', buf[2]-'0', buf[3]-'0');
+                blocks.push_back(block);
+                //cout << buf << endl;
+                i++;
+            }
+            break;
+        }
     }
 }
 
@@ -187,7 +149,7 @@ int detect_overlap(Block b1, Block b2)
 }
 
 // 检验整体状态是否正确
-int if_valid(vector<Block> blocks)
+int if_valid()
 {
     int i, j;
     int status = 1;
