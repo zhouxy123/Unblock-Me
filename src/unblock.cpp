@@ -177,3 +177,40 @@ int if_valid()
 
     return status;
 }
+
+// 获取块编号
+int get_block_id(int x, int y)
+{
+    int block_id = -1;
+    int block_x_start, block_x_end, block_y_start, block_y_end;
+    for(vector<Block>::iterator it = blocks.begin(); it != blocks.end(); it++)
+    {
+        block_x_start = 4 *(*it).x + 1;
+        block_y_start = 2 *(*it).y + 1;
+        if ((*it).direction == 0)
+        {
+            block_x_end = block_x_start + 4 * (*it).length;
+            block_y_end = block_y_start + 2;
+        }
+        else
+        {
+            block_y_end = block_y_start + 2 * (*it).length;
+            block_x_end = block_x_start + 4;
+        }
+
+        if((x>block_x_start)&&(x<block_x_end)&&(y>block_y_start)&&(y<block_y_end))
+        {
+            block_id = (*it).id;
+            break;
+        }
+    }
+    return block_id;
+}
+
+int if_successful()
+{
+    if(blocks[0].x == 4) 
+        return 1;
+    else 
+        return 0;
+}

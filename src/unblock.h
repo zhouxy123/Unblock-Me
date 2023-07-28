@@ -32,5 +32,7 @@ void blocks_init(char *level_id);
 int detect_exceed(Block b1);
 int detect_overlap(Block b1, Block b2);
 int if_valid();
+int get_block_id(int x, int y);
+int if_successful();
 
 #endif
