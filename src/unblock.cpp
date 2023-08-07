@@ -7,7 +7,9 @@
 using namespace std;
 
 vector<Block> blocks;
+char box_record[27][15] = {};
 //全局变量：.cpp中定义，.h中声明(extern)
+
 
 //移动（范围：-4～+4）
 void Block::move(int step)
@@ -214,3 +216,225 @@ int if_successful()
     else 
         return 0;
 }
+
+// 清空box_record
+void clear_record()
+{
+    int i,j;
+    for (i = 1; i <= 25; i++)
+    {
+        for (j = 1; j <= 13; j++)
+        {
+            box_record[i][j] = ' ';
+        }
+    }
+}
+
+// 在box_record里画一个block的边界+内部
+void record_one_block(Block block, int draw_x_start, int draw_y_start)
+{
+    char type;
+    if (block.id == 0)
+        type = '&';
+    else
+        type = '#';
+
+    int draw_x_end, draw_y_end;
+    int i;
+
+    if (block.direction == 0)
+    {
+        draw_x_end = draw_x_start + 4 * block.length;
+        draw_y_end = draw_y_start + 2;
+        box_record[draw_x_start][draw_y_start + 1] = '|';
+        box_record[draw_x_end][draw_y_start + 1] = '|';
+        for (i = draw_x_start; i <= draw_x_end; i++)
+        {
+            box_record[i][draw_y_start] = '=';
+            box_record[i][draw_y_end] = '=';
+        }
+
+        for (i = draw_x_start + 1; i < draw_x_end; i++)
+        {
+            //cge_box_mvprintf(game_region, i, draw_y_start + 1, color, L"|");
+            box_record[i][draw_y_start + 1] = type;
+        }
+    }
+
+    else
+    {
+        draw_x_end = draw_x_start + 4;
+        draw_y_end = draw_y_start + 2 * block.length;
+        for (i = draw_x_start; i <= draw_x_end; i++)
+        {
+            box_record[i][draw_y_start] = '=';
+            box_record[i][draw_y_end] = '=';
+        }
+        for (i = draw_y_start; i <= draw_y_end; i++)
+        {
+            box_record[draw_x_start][i] = '|';
+            box_record[draw_x_start + 4][i] = '|';
+        }
+        for (i = draw_y_start + 1; i < draw_y_end; i++)
+        {
+            //cge_box_mvprintf(game_region, draw_x_start + 1, i, 13, L"|");
+            //cge_box_mvprintf(game_region, draw_x_start + 2, i, 13, L"|");
+            //cge_box_mvprintf(game_region, draw_x_start + 3, i, 13, L"|");
+            box_record[draw_x_start + 1][i] = '#';
+            box_record[draw_x_start + 2][i] = '#';
+            box_record[draw_x_start + 3][i] = '#';
+        }
+    }
+}
+
+// 在box_record里画一个block的四个角
+void record_corner(Block block, int draw_x_start, int draw_y_start)
+{
+    int draw_x_end, draw_y_end;
+    if (block.direction == 0)
+    {
+        draw_x_end = draw_x_start + 4 * block.length;
+        draw_y_end = draw_y_start + 2;
+    }
+    else
+    {
+        draw_x_end = draw_x_start + 4;
+        draw_y_end = draw_y_start + 2 * block.length;
+    }
+    box_record[draw_x_start][draw_y_start] = '+';
+    box_record[draw_x_end][draw_y_start] = '+';
+    box_record[draw_x_start][draw_y_end] = '+';
+    box_record[draw_x_end][draw_y_end] = '+';
+}
+
+// 在box_record里画所有块
+void record_blocks()
+{
+    int draw_x_start, draw_y_start; // 实际画图的x,y
+
+    // 先清空
+    clear_record();
+
+    for (vector<Block>::iterator it = blocks.begin(); it != blocks.end(); it++)
+    {
+
+        draw_x_start = 4 * (*it).x + 1;
+        draw_y_start = 2 * (*it).y + 1;
+        record_one_block((*it), draw_x_start, draw_y_start);
+    }
+
+    for (vector<Block>::iterator it = blocks.begin(); it != blocks.end(); it++)
+    {
+
+        draw_x_start = 4 * (*it).x + 1;
+        draw_y_start = 2 * (*it).y + 1;
+        record_corner((*it), draw_x_start, draw_y_start);
+    }
+}
+
+// 手动设置某个块的位置（用于鼠标拖动）
+void set_position(int id, int set_x_start, int set_y_start)
+{
+    int draw_x_start, draw_y_start;
+    // 先清空
+    clear_record();
+
+    for (vector<Block>::iterator it = blocks.begin(); it != blocks.end(); it++)
+    {
+        if ((*it).id != id)
+        {
+            draw_x_start = 4 * (*it).x + 1;
+            draw_y_start = 2 * (*it).y + 1;
+        }
+        else
+        {
+            draw_x_start = set_x_start;
+            draw_y_start = set_y_start;
+        }
+        record_one_block((*it), draw_x_start, draw_y_start);
+    }
+    for (vector<Block>::iterator it = blocks.begin(); it != blocks.end(); it++)
+    {
+        if ((*it).id != id)
+        {
+            draw_x_start = 4 * (*it).x + 1;
+            draw_y_start = 2 * (*it).y + 1;
+        }
+        else
+        {
+            draw_x_start = set_x_start;
+            draw_y_start = set_y_start;
+        }
+        record_corner((*it), draw_x_start, draw_y_start);
+    }
+}
+
+// 检测上下左右有多少空间
+// dir=1: 正方向（右、下）
+// dir=0: 负方向（左、上）
+int block_detect(int id, int dir)
+{
+    int i;
+    int x_start, y_start, x_end, y_end;
+    x_start = 4 * blocks[id].x + 1;
+    y_start = 2 * blocks[id].y + 1;
+    int max_step = 0;
+    if (blocks[id].direction == 0)
+    {
+        x_end = x_start + 4 * blocks[id].length;
+        if (dir == 1) // 最多往右挪几个格
+        {
+            max_step = 25 - x_end - 1;
+            for (i = x_end + 1; i <= 25; i++)
+            {
+                if (box_record[i][y_start + 1] != ' ')
+                {
+                    max_step = i - x_end - 1;
+                    break;
+                }
+            }
+        }
+        if (dir == 0) // 最多往左挪几个格
+        {
+            max_step = 1 - x_start + 1;
+            for (i = x_start - 1; i>=1; i--)
+            {
+                if (box_record[i][y_start + 1] != ' ')
+                {
+                    max_step = i - x_start + 1;
+                    break;
+                }
+            }
+        }
+    }
+    else if(blocks[id].direction == 1)
+    {
+        y_end = y_start + 2 * blocks[id].length;
+        if (dir == 1) // 最多往下挪几个格
+        {
+            max_step = 13 - y_end - 1;
+            for (i = y_end + 1; i <= 13; i++)
+            {
+                if (box_record[x_start + 1][i] != ' ')
+                {
+                    max_step = i - y_end - 1;
+                    break;
+                }
+            }
+        }
+        if (dir == 0) // 最多往上挪几个格
+        {
+            max_step = 1 - y_start + 1;
+            for (i = y_start - 1; i >= 1; i--)
+            {
+                if (box_record[x_start + 1][i] != ' ')
+                {
+                    max_step = i - y_start + 1;
+                    break;
+                }
+            }
+        }
+    }
+    return max_step;
+}
+

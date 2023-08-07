@@ -21,8 +21,12 @@ typedef enum game_state
 typedef struct game_model
 {
     GAME_STATE state;
-    int x_press, y_press, x_release, y_release;
+    int x_press, y_press;
+    int x_temp, y_temp;
+    int x_release, y_release;
     int id;
+    int max_step;
+    int delta_x, delta_y;
 } GAME_MODEL;
 GAME_MODEL g_model;
 
@@ -35,146 +39,49 @@ int g_emitter;
 // box
 int game_region;
 
-// 画块时，在此字符数组里同步记录
-char box_record[27][15] = {};
-
 // 测试事件
 void emit_handle(void *m)
 {
     cge_box_mvprintf(game_region, 2, 2, 2, (const wchar_t *)m);
 }
 
-void draw_blocks()
+// 清空显示
+void clear_screen()
 {
-    int i, j;
-    int draw_x_start, draw_y_start; // 实际画图的x,y
-    int draw_x_end, draw_y_end;
-
-    for(i = 1; i<=25; i++)
+    int i,j;
+    for (i = 1; i <= 25; i++)
     {
-        for(j=1; j<=13; j++)
+        for (j = 1; j <= 13; j++)
         {
             cge_box_mvprintf(game_region, i, j, 1, L" ");
-            box_record[i][j] = 0;
         }
     }
-    for (vector<Block>::iterator it = blocks.begin(); it != blocks.end(); it++)
+}
+
+// 实际画出所有块
+void draw_blocks()
+{
+    int x, y;
+    char c;
+
+    clear_screen();
+
+    for (x = 1; x <= 25; x++)
     {
-        draw_x_start = 4 * (*it).x + 1;
-        draw_y_start = 2 * (*it).y + 1;
-
-        if ((*it).direction == 0)
+        for (y = 1; y <= 13; y++)
         {
-            draw_x_end = draw_x_start + 4 * (*it).length;
-            cge_box_mvprintf(game_region, draw_x_start, draw_y_start + 1, EDGE_COLOR, L"║");
-            cge_box_mvprintf(game_region, draw_x_end, draw_y_start + 1, EDGE_COLOR, L"║");
-            box_record[draw_x_start][draw_y_start + 1] = '|';
-            box_record[draw_x_end][draw_y_start + 1] = '|';
-            for (i = draw_x_start + 1; i < draw_x_end; i++)
-            {
-                if ((i - draw_x_start) % 4 == 0)
-                {
-                    continue;
-                }
-                cge_box_mvprintf(game_region, i, draw_y_start, EDGE_COLOR, L"═");
-                cge_box_mvprintf(game_region, i, draw_y_start + 2, EDGE_COLOR, L"═");
-                box_record[i][draw_y_start] = '=';
-                box_record[i][draw_y_start + 2] = '=';
-            }
+            c = box_record[x][y];
 
-            if ((*it).id == 0)
-            {
-                for (i = draw_x_start + 1; i < draw_x_end; i++)
-                {
-                    cge_box_mvprintf(game_region, i, draw_y_start + 1, 10, L"|");
-                }
-            }
-
-            else
-            {
-                for (i = draw_x_start + 1; i < draw_x_end; i++)
-                {
-                    cge_box_mvprintf(game_region, i, draw_y_start + 1, 13, L"|");
-                }
-            }
-        }
-
-        else
-        {
-            draw_y_end = draw_y_start + 2 * (*it).length;
-            for (i = draw_x_start + 1; i < draw_x_start + 4; i++)
-            {
-                cge_box_mvprintf(game_region, i, draw_y_start, EDGE_COLOR, L"═");
-                cge_box_mvprintf(game_region, i, draw_y_end, EDGE_COLOR, L"═");
-                box_record[i][draw_y_start] = '=';
-                box_record[i][draw_y_end] = '=';
-            }
-            for (i = draw_y_start + 1; i < draw_y_end; i++)
-            {
-                if ((i - draw_y_start) % 2 == 0)
-                {
-                    continue;
-                }
-                cge_box_mvprintf(game_region, draw_x_start, i, EDGE_COLOR, L"║");
-                cge_box_mvprintf(game_region, draw_x_start + 4, i, EDGE_COLOR, L"║");
-                box_record[draw_x_start][i] = '|';
-                box_record[draw_x_start + 4][i] = '|';
-            }
-            for (i = draw_y_start + 1; i < draw_y_end; i++)
-            {
-                cge_box_mvprintf(game_region, draw_x_start + 1, i, 13, L"|");
-                cge_box_mvprintf(game_region, draw_x_start + 2, i, 13, L"|");
-                cge_box_mvprintf(game_region, draw_x_start + 3, i, 13, L"|");
-            }
-        }
-
-        int x, y;
-        char c_up, c_down, c_left, c_right;
-        for (i = 1; i <= 7; i++)
-        {
-            for (j = 1; j <= 7; j++)
-            {
-                x = 4 * i - 3;
-                y = 2 * j - 1;
-
-                c_up = box_record[x][y - 1];
-                c_down = box_record[x][y + 1];
-                c_left = box_record[x - 1][y];
-                c_right = box_record[x + 1][y];
-
-                if ((c_up != '|') && (c_down != '|') && (c_left == '=') && (c_right == '='))
-                    cge_box_mvprintf(game_region, x, y, EDGE_COLOR, L"═");
-
-                else if ((c_up != '|') && (c_down == '|') && (c_left != '=') && (c_right == '='))
-                    cge_box_mvprintf(game_region, x, y, EDGE_COLOR, L"╔");
-
-                else if ((c_up != '|') && (c_down == '|') && (c_left == '=') && (c_right != '='))
-                    cge_box_mvprintf(game_region, x, y, EDGE_COLOR, L"╗");
-
-                else if ((c_up == '|') && (c_down != '|') && (c_left != '=') && (c_right == '='))
-                    cge_box_mvprintf(game_region, x, y, EDGE_COLOR, L"╚");
-
-                else if ((c_up == '|') && (c_down != '|') && (c_left == '=') && (c_right != '='))
-                    cge_box_mvprintf(game_region, x, y, EDGE_COLOR, L"╝");
-
-                else if ((c_up == '|') && (c_down == '|') && (c_left != '=') && (c_right != '='))
-                    cge_box_mvprintf(game_region, x, y, EDGE_COLOR, L"║");
-
-                else if ((c_up != '|') && (c_down == '|') && (c_left == '=') && (c_right == '='))
-                    cge_box_mvprintf(game_region, x, y, EDGE_COLOR, L"╦");
-
-                else if ((c_up == '|') && (c_down != '|') && (c_left == '=') && (c_right == '='))
-                    cge_box_mvprintf(game_region, x, y, EDGE_COLOR, L"╩");
-
-                else if ((c_up == '|') && (c_down == '|') && (c_left != '=') && (c_right == '='))
-                    cge_box_mvprintf(game_region, x, y, EDGE_COLOR, L"╠");
-
-                else if ((c_up == '|') && (c_down == '|') && (c_left == '=') && (c_right != '='))
-                    cge_box_mvprintf(game_region, x, y, EDGE_COLOR, L"╣");
-
-                else if ((c_up == '|') && (c_down == '|') && (c_left == '=') && (c_right == '='))
-                    cge_box_mvprintf(game_region, x, y, EDGE_COLOR, L"╬");
-            }
+            if (c == '|')
+                cge_box_mvprintf(game_region, x, y, EDGE_COLOR, L"║");
+            if (c == '=')
+                cge_box_mvprintf(game_region, x, y, EDGE_COLOR, L"═");
+            if (c == '+')
+                cge_box_mvprintf(game_region, x, y, EDGE_COLOR, L"+");
+            if (c == '&')
+                cge_box_mvprintf(game_region, x, y, 10, L"|");
+            if (c == '#')
+                cge_box_mvprintf(game_region, x, y, 13, L"|");
         }
     }
 }
@@ -186,6 +93,12 @@ void timer_end_moving()
     int ed = (int)(size_t)cge_timer_getexdata(g_moving_timer);
     g_model.x_press = ed;
     cge_emitter_notify(g_emitter, (void *)L"BB");
+}
+
+// 胜利
+void victory()
+{
+    cge_box_mvprintf(game_region, 10, 0, 12, L"VICTORY");
 }
 
 // 初始化
@@ -222,6 +135,7 @@ void init()
     cge_emitter_addob(g_emitter, emit_handle);
 
     blocks_init(LEVEL);
+    record_blocks();
     draw_blocks();
 }
 
@@ -232,16 +146,79 @@ void cge_update(double dt)
         return;
 
     int move_state;
-    for (int i = 0; i < cge_events_count; i++)
+    int i;
+    for (i = 0; i < cge_events_count; i++)
     {
         CGE_USER_EVENT *ue = &cge_events[i];
-        if (g_model.state == NORMAL && ue->type == CGE_MOUSE)
+        // if (g_model.state == NORMAL && ue->type == CGE_MOUSE)
+
+        if (ue->type == CGE_MOUSE)
         {
             if (ue->mouse_bstate == BUTTON1_PRESSED)
             {
                 g_model.x_press = ue->x - 5;
                 g_model.y_press = ue->y - 2;
-                g_model.id = get_block_id(g_model.x_press, g_model.y_press); 
+                g_model.id = get_block_id(g_model.x_press, g_model.y_press);
+                record_blocks();
+                draw_blocks();
+            }
+
+            // 0x80000: 按下左键并拖动
+            if (ue->mouse_bstate == 0x80000)
+            {
+                g_model.x_temp = ue->x - 5;
+                g_model.y_temp = ue->y - 2;
+                int x_origin = 4 * blocks[g_model.id].x + 1;
+                int y_origin = 2 * blocks[g_model.id].y + 1;
+                //int max_step;
+                //int delta_x, delta_y;
+                // cge_box_mvprintf(game_region, g_model.x_temp, g_model.y_temp, 8, L"#");
+                if (blocks[g_model.id].direction == 0)
+                {
+                    g_model.delta_x = g_model.x_temp - g_model.x_press;
+                    if (g_model.delta_x >= 0)//往右拖
+                    {
+                        g_model.max_step = block_detect(g_model.id, 1);
+                        if(g_model.delta_x <= g_model.max_step)
+                        {
+                            //cge_box_mvprintf(game_region, x_origin + g_model.delta_x, y_origin+1, 8, L"#");
+                            set_position(g_model.id, x_origin + g_model.delta_x, y_origin);
+                            draw_blocks();
+                        }
+                    }
+                    else //往左拖
+                    {
+                        g_model.max_step = block_detect(g_model.id, 0);
+                        if(g_model.delta_x >= g_model.max_step)
+                        {
+                            set_position(g_model.id, x_origin + g_model.delta_x, y_origin);
+                            draw_blocks();
+                        }
+                    }
+                    
+                }
+                if (blocks[g_model.id].direction == 1)
+                {
+                    g_model.delta_y = g_model.y_temp - g_model.y_press;
+                    if (g_model.delta_y >= 0)//往下拖
+                    {
+                        g_model.max_step = block_detect(g_model.id, 1);
+                        if(g_model.delta_y <= g_model.max_step)
+                        {
+                            set_position(g_model.id, x_origin, y_origin + g_model.delta_y);
+                            draw_blocks();
+                        }
+                    }
+                    else //往上拖
+                    {
+                        g_model.max_step = block_detect(g_model.id, 0);
+                        if(g_model.delta_y >= g_model.max_step)
+                        {
+                            set_position(g_model.id, x_origin, y_origin + g_model.delta_y);
+                            draw_blocks();
+                        }
+                    }
+                }
             }
 
             // 0x40000: 按下过程中释放
@@ -271,25 +248,25 @@ void cge_update(double dt)
                     {
                         move_state = -1;
                     }
-                    
+
                     else
                     {
                         move_state = 0;
                     }
 
                     blocks[g_model.id].move(move_state);
-                    if(if_valid()<0)
+                    if (if_valid() < 0)
                     {
-                        blocks[g_model.id].move((-1)*move_state);
+                        blocks[g_model.id].move((-1) * move_state);
                     }
-                    
                 }
+                record_blocks();
+                draw_blocks();
             }
-            draw_blocks();
 
-            if(if_successful())
+            if (if_successful())
             {
-                cge_box_mvprintf(game_region, 10, 0, 12, L"VICTORY");
+                victory();
             }
         }
     }
