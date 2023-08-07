@@ -38,7 +38,9 @@ void cge_update(double dt) {
                       BUTTON1_RELEASED, REPORT_MOUSE_POSITION, 
                       ue->mouse_bstate);
             //留下这三种事件就可以了
-            if(ue->mouse_bstate == 2 || ue->mouse_bstate == 4 || ue->mouse_bstate == 0x80000) {
+            //if(ue->mouse_bstate == 2 || ue->mouse_bstate == 4 || ue->mouse_bstate == 0x80000)
+            if(ue->mouse_bstate == 0x80000)
+            {
                 g_model.x = ue->x;
                 g_model.y = ue->y;
                 cge_box_mvprintf(g_box_test2, g_model.x, g_model.y, 8, L"+");
