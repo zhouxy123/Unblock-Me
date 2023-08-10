@@ -10,6 +10,12 @@ using namespace std;
 #define LEVEL "L1"
 #define EDGE_COLOR 9
 
+// 用于探测
+#define RIGHT 0
+#define LEFT 1
+#define DOWN 2
+#define UP 3
+
 // 游戏状态
 typedef enum game_state
 {
@@ -147,6 +153,7 @@ void cge_update(double dt)
 
     int move_state;
     int i;
+    int x_start_origin, y_start_origin, x_end_origin, y_end_origin;
     for (i = 0; i < cge_events_count; i++)
     {
         CGE_USER_EVENT *ue = &cge_events[i];
@@ -164,34 +171,35 @@ void cge_update(double dt)
             }
 
             // 0x80000: 按下左键并拖动
-            if (ue->mouse_bstate == 0x80000)
+            if (ue->mouse_bstate == 0x80000 && g_model.id >= 0)
             {
                 g_model.x_temp = ue->x - 5;
                 g_model.y_temp = ue->y - 2;
-                int x_origin = 4 * blocks[g_model.id].x + 1;
-                int y_origin = 2 * blocks[g_model.id].y + 1;
-                //int max_step;
-                //int delta_x, delta_y;
-                // cge_box_mvprintf(game_region, g_model.x_temp, g_model.y_temp, 8, L"#");
+                x_start_origin = 4 * blocks[g_model.id].x + 1;
+                y_start_origin = 2 * blocks[g_model.id].y + 1;
+        
                 if (blocks[g_model.id].direction == 0)
                 {
+                    x_end_origin = x_start_origin + 4 * blocks[g_model.id].length;
                     g_model.delta_x = g_model.x_temp - g_model.x_press;
+
                     if (g_model.delta_x >= 0)//往右拖
                     {
-                        g_model.max_step = block_detect(g_model.id, 1);
-                        if(g_model.delta_x <= g_model.max_step)
+                        g_model.max_step = block_detect(x_end_origin + g_model.delta_x, y_start_origin, RIGHT);
+
+                        if(g_model.max_step >= 0 && g_model.delta_x <= 4)
                         {
-                            //cge_box_mvprintf(game_region, x_origin + g_model.delta_x, y_origin+1, 8, L"#");
-                            set_position(g_model.id, x_origin + g_model.delta_x, y_origin);
+                            set_position(g_model.id, x_start_origin + g_model.delta_x, y_start_origin);
                             draw_blocks();
                         }
                     }
                     else //往左拖
                     {
-                        g_model.max_step = block_detect(g_model.id, 0);
-                        if(g_model.delta_x >= g_model.max_step)
+                        g_model.max_step = block_detect(x_start_origin + g_model.delta_x, y_start_origin, LEFT);
+
+                        if(g_model.max_step <= 0 && g_model.delta_x >= -4)
                         {
-                            set_position(g_model.id, x_origin + g_model.delta_x, y_origin);
+                            set_position(g_model.id, x_start_origin + g_model.delta_x, y_start_origin);
                             draw_blocks();
                         }
                     }
@@ -199,22 +207,25 @@ void cge_update(double dt)
                 }
                 if (blocks[g_model.id].direction == 1)
                 {
+                    y_end_origin = y_start_origin + 2 * blocks[g_model.id].length;
                     g_model.delta_y = g_model.y_temp - g_model.y_press;
+
                     if (g_model.delta_y >= 0)//往下拖
                     {
-                        g_model.max_step = block_detect(g_model.id, 1);
-                        if(g_model.delta_y <= g_model.max_step)
+                        g_model.max_step = block_detect(x_start_origin, y_end_origin + g_model.delta_y, DOWN);
+
+                        if(g_model.max_step >= 0 && g_model.delta_y <= 2)
                         {
-                            set_position(g_model.id, x_origin, y_origin + g_model.delta_y);
+                            set_position(g_model.id, x_start_origin, y_start_origin + g_model.delta_y);
                             draw_blocks();
                         }
                     }
                     else //往上拖
                     {
-                        g_model.max_step = block_detect(g_model.id, 0);
-                        if(g_model.delta_y >= g_model.max_step)
+                        g_model.max_step = block_detect(x_start_origin, y_start_origin + g_model.delta_y, UP);
+                        if(g_model.max_step <= 0 && g_model.delta_y >= -2)
                         {
-                            set_position(g_model.id, x_origin, y_origin + g_model.delta_y);
+                            set_position(g_model.id, x_start_origin, y_start_origin + g_model.delta_y);
                             draw_blocks();
                         }
                     }

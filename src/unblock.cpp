@@ -50,7 +50,6 @@ void blocks_init(char *level_id)
                 ifs >> buf;
                 Block block(i, buf[0]-'0', buf[1]-'0', buf[2]-'0', buf[3]-'0');
                 blocks.push_back(block);
-                //cout << buf << endl;
                 i++;
             }
             break;
@@ -256,7 +255,6 @@ void record_one_block(Block block, int draw_x_start, int draw_y_start)
 
         for (i = draw_x_start + 1; i < draw_x_end; i++)
         {
-            //cge_box_mvprintf(game_region, i, draw_y_start + 1, color, L"|");
             box_record[i][draw_y_start + 1] = type;
         }
     }
@@ -277,9 +275,6 @@ void record_one_block(Block block, int draw_x_start, int draw_y_start)
         }
         for (i = draw_y_start + 1; i < draw_y_end; i++)
         {
-            //cge_box_mvprintf(game_region, draw_x_start + 1, i, 13, L"|");
-            //cge_box_mvprintf(game_region, draw_x_start + 2, i, 13, L"|");
-            //cge_box_mvprintf(game_region, draw_x_start + 3, i, 13, L"|");
             box_record[draw_x_start + 1][i] = '#';
             box_record[draw_x_start + 2][i] = '#';
             box_record[draw_x_start + 3][i] = '#';
@@ -369,10 +364,63 @@ void set_position(int id, int set_x_start, int set_y_start)
     }
 }
 
-// 检测上下左右有多少空间
-// dir=1: 正方向（右、下）
-// dir=0: 负方向（左、上）
-int block_detect(int id, int dir)
+// 检测上下左右有多少空间 （重新写）
+int block_detect(int x, int y, int dir)
+{
+    int i;
+    int max_step = 0;
+    if (dir == 0) // 最多往右挪几个格
+    {
+        max_step = 25 - x;
+        for (i = x + 1; i <= 25; i++)
+        {
+            if (box_record[i][y + 1] == '#')
+            {
+                max_step = i - x - 1;
+                break;
+            }
+        }
+    }
+    if (dir == 1) // 最多往左挪几个格
+    {
+        max_step = 1 - x;
+        for (i = x - 1; i >=1; i--)
+        {
+            if (box_record[i][y + 1] == '#')
+            {
+                max_step = i - x + 1;
+                break;
+            }
+        }
+    }
+    if (dir == 2) // 最多往下挪几个格
+    {
+        max_step = 13 - y;
+        for (i = y + 1; i <= 13; i++)
+        {
+            if (box_record[x+1][i] == '#')
+            {
+                max_step = i - y - 1;
+                break;
+            }
+        }
+    }
+    if (dir == 3) // 最多往上挪几个格
+    {
+        max_step = 1 - y;
+        for (i = y - 1; i >= 1; i--)
+        {
+            if (box_record[x+1][i] == '#')
+            {
+                max_step = i - y + 1;
+                break;
+            }
+        }
+    }
+    return max_step;
+
+}
+/*int block_detect(int id, int dir)
 {
     int i;
     int x_start, y_start, x_end, y_end;
@@ -436,5 +484,5 @@ int block_detect(int id, int dir)
         }
     }
     return max_step;
-}
+}*/
 

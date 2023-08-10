@@ -41,6 +41,6 @@ void record_one_block(Block block, int draw_x_start, int draw_y_start);
 void record_corner(Block block, int draw_x_start, int draw_y_start);
 void record_blocks();
 void set_position(int id, int set_x_start, int set_y_start);
-int block_detect(int id, int dir);
+int block_detect(int x, int y, int dir);
 
 #endif
