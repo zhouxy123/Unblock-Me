@@ -33,6 +33,7 @@ typedef struct game_model
     int id;
     int max_step;
     int delta_x, delta_y;
+    int right_lock, left_lock, down_lock, up_lock;
 } GAME_MODEL;
 GAME_MODEL g_model;
 
@@ -54,7 +55,7 @@ void emit_handle(void *m)
 // 清空显示
 void clear_screen()
 {
-    int i,j;
+    int i, j;
     for (i = 1; i <= 25; i++)
     {
         for (j = 1; j <= 13; j++)
@@ -166,6 +167,49 @@ void cge_update(double dt)
                 g_model.x_press = ue->x - 5;
                 g_model.y_press = ue->y - 2;
                 g_model.id = get_block_id(g_model.x_press, g_model.y_press);
+
+                x_start_origin = 4 * blocks[g_model.id].x + 1;
+                y_start_origin = 2 * blocks[g_model.id].y + 1;
+                if (blocks[g_model.id].direction == 0)
+                {
+                    x_end_origin = x_start_origin + 4 * blocks[g_model.id].length;
+                    if (block_detect(x_end_origin, y_start_origin, RIGHT) == 0)
+                    {
+                        g_model.right_lock = 1;
+                    }
+                    if (block_detect(x_end_origin, y_start_origin, RIGHT) > 0)
+                    {
+                        g_model.right_lock = 0;
+                    }
+                    if (block_detect(x_start_origin, y_start_origin, LEFT) == 0)
+                    {
+                        g_model.left_lock = 1;
+                    }
+                    if (block_detect(x_start_origin, y_start_origin, LEFT) < 0)
+                    {
+                        g_model.left_lock = 0;
+                    }
+                }
+                if (blocks[g_model.id].direction == 1)
+                {
+                    y_end_origin = y_start_origin + 2 * blocks[g_model.id].length;
+                    if (block_detect(x_start_origin, y_end_origin, DOWN) == 0)
+                    {
+                        g_model.down_lock = 1;
+                    }
+                    if (block_detect(x_start_origin, y_end_origin, DOWN) > 0)
+                    {
+                        g_model.down_lock = 0;
+                    }
+                    if (block_detect(x_start_origin, y_start_origin, UP) == 0)
+                    {
+                        g_model.up_lock = 1;
+                    }
+                    if (block_detect(x_start_origin, y_start_origin, UP) < 0)
+                    {
+                        g_model.up_lock = 0;
+                    }
+                }
                 record_blocks();
                 draw_blocks();
             }
@@ -177,53 +221,52 @@ void cge_update(double dt)
                 g_model.y_temp = ue->y - 2;
                 x_start_origin = 4 * blocks[g_model.id].x + 1;
                 y_start_origin = 2 * blocks[g_model.id].y + 1;
-        
+
                 if (blocks[g_model.id].direction == 0)
                 {
                     x_end_origin = x_start_origin + 4 * blocks[g_model.id].length;
                     g_model.delta_x = g_model.x_temp - g_model.x_press;
 
-                    if (g_model.delta_x >= 0)//往右拖
+                    if (g_model.delta_x >= 0 && g_model.delta_x <= 4) // 往右拖
                     {
                         g_model.max_step = block_detect(x_end_origin + g_model.delta_x, y_start_origin, RIGHT);
 
-                        if(g_model.max_step >= 0 && g_model.delta_x <= 4)
+                        if (g_model.max_step > 0 && g_model.right_lock == 0)
                         {
                             set_position(g_model.id, x_start_origin + g_model.delta_x, y_start_origin);
                             draw_blocks();
                         }
                     }
-                    else //往左拖
+                    else if (g_model.delta_x <= 0 && g_model.delta_x >= -4) // 往左拖
                     {
                         g_model.max_step = block_detect(x_start_origin + g_model.delta_x, y_start_origin, LEFT);
 
-                        if(g_model.max_step <= 0 && g_model.delta_x >= -4)
+                        if (g_model.max_step < 0 && g_model.left_lock == 0)
                         {
                             set_position(g_model.id, x_start_origin + g_model.delta_x, y_start_origin);
                             draw_blocks();
                         }
                     }
-                    
                 }
                 if (blocks[g_model.id].direction == 1)
                 {
                     y_end_origin = y_start_origin + 2 * blocks[g_model.id].length;
                     g_model.delta_y = g_model.y_temp - g_model.y_press;
 
-                    if (g_model.delta_y >= 0)//往下拖
+                    if (g_model.delta_y >= 0 && g_model.delta_y <= 2) // 往下拖
                     {
                         g_model.max_step = block_detect(x_start_origin, y_end_origin + g_model.delta_y, DOWN);
 
-                        if(g_model.max_step >= 0 && g_model.delta_y <= 2)
+                        if (g_model.max_step > 0 && g_model.down_lock == 0)
                         {
                             set_position(g_model.id, x_start_origin, y_start_origin + g_model.delta_y);
                             draw_blocks();
                         }
                     }
-                    else //往上拖
+                    else if (g_model.delta_y <= 0 && g_model.delta_y >= -2) // 往上拖
                     {
                         g_model.max_step = block_detect(x_start_origin, y_start_origin + g_model.delta_y, UP);
-                        if(g_model.max_step <= 0 && g_model.delta_y >= -2)
+                        if (g_model.max_step < 0 && g_model.up_lock == 0)
                         {
                             set_position(g_model.id, x_start_origin, y_start_origin + g_model.delta_y);
                             draw_blocks();
@@ -240,22 +283,22 @@ void cge_update(double dt)
 
                 if (g_model.id >= 0)
                 {
-                    if ((blocks[g_model.id].direction == 0) && (g_model.x_release > g_model.x_press))
+                    if ((blocks[g_model.id].direction == 0) && (g_model.x_release - g_model.x_press) >= 2)
                     {
                         move_state = 1;
                     }
 
-                    else if ((blocks[g_model.id].direction == 0) && (g_model.x_release < g_model.x_press))
+                    else if ((blocks[g_model.id].direction == 0) && (g_model.x_release - g_model.x_press) <= -2)
                     {
                         move_state = -1;
                     }
 
-                    else if ((blocks[g_model.id].direction == 1) && (g_model.y_release > g_model.y_press))
+                    else if ((blocks[g_model.id].direction == 1) && (g_model.y_release - g_model.y_press) >= 2)
                     {
                         move_state = 1;
                     }
 
-                    else if ((blocks[g_model.id].direction == 1) && (g_model.y_release < g_model.y_press))
+                    else if ((blocks[g_model.id].direction == 1) && (g_model.y_release - g_model.y_press) <= -2)
                     {
                         move_state = -1;
                     }
