@@ -7,7 +7,7 @@
 
 using namespace std;
 
-#define LEVEL "L1"
+#define LEVEL "L2"
 #define EDGE_COLOR 9
 
 // 用于探测
@@ -34,6 +34,8 @@ typedef struct game_model
     int max_step;
     int delta_x, delta_y;
     int right_lock, left_lock, down_lock, up_lock;
+    int auto_mode;
+    int step;
 } GAME_MODEL;
 GAME_MODEL g_model;
 
@@ -45,6 +47,8 @@ int g_emitter;
 
 // box
 int game_region;
+int auto_play;
+int next_step;
 
 // 测试事件
 void emit_handle(void *m)
@@ -108,14 +112,58 @@ void victory()
     cge_box_mvprintf(game_region, 10, 0, 12, L"VICTORY");
 }
 
+// 自动移动
+void auto_move()
+{
+    g_model.auto_mode = 1;
+    auto_calculate();
+    reset();
+    // cge_box_mvprintf(game_region, 0, 0, 1, L"AUTO");
+    cge_box_mvprintf(auto_play, 2, 1, 12, L"AUTO");
+    cge_box_mvprintf(game_region, 10, 0, 1, L"═══════");
+    cge_box_mvprintf(game_region, 13, 0, 1, L"%lc", LEVEL[1]);
+
+    cge_box_mvprintf(next_step, 0, 0, 1, L"╔");
+    cge_box_mvprintf(next_step, 12, 0, 1, L"╗");
+    cge_box_mvprintf(next_step, 0, 2, 1, L"╚");
+    cge_box_mvprintf(next_step, 12, 2, 1, L"╝");
+    cge_box_mvprintf(next_step, 0, 1, 1, L"║");
+    cge_box_mvprintf(next_step, 12, 1, 1, L"║");
+
+    for (int i = 1; i <= 11; i++)
+    {
+        cge_box_mvprintf(next_step, i, 0, 1, L"═");
+        cge_box_mvprintf(next_step, i, 2, 1, L"═");
+    }
+    cge_box_mvprintf(next_step, 2, 1, 1, L"NEXT STEP");
+}
+
 // 初始化
 void init()
 {
     int i;
     g_model.state = NORMAL;
+    g_model.auto_mode = 0;
+    g_model.step = 0;
     cge_init_term();
 
     game_region = cge_box_register(27, 15, 5, 2);
+    auto_play = cge_box_register(8, 3, 5, 17);
+    next_step = cge_box_register(13, 3, 19, 17);
+
+    cge_box_mvprintf(auto_play, 0, 0, 1, L"╔");
+    cge_box_mvprintf(auto_play, 7, 0, 1, L"╗");
+    cge_box_mvprintf(auto_play, 0, 2, 1, L"╚");
+    cge_box_mvprintf(auto_play, 7, 2, 1, L"╝");
+    cge_box_mvprintf(auto_play, 0, 1, 1, L"║");
+    cge_box_mvprintf(auto_play, 7, 1, 1, L"║");
+    for (i = 1; i <= 6; i++)
+    {
+        cge_box_mvprintf(auto_play, i, 0, 1, L"═");
+        cge_box_mvprintf(auto_play, i, 2, 1, L"═");
+    }
+    cge_box_mvprintf(auto_play, 2, 1, 1, L"AUTO");
+
     cge_box_mvprintf(game_region, 0, 0, 1, L"╔");
     for (i = 1; i <= 25; i++)
     {
@@ -155,6 +203,7 @@ void cge_update(double dt)
     int move_state;
     int i;
     int x_start_origin, y_start_origin, x_end_origin, y_end_origin;
+    // int auto_mode = 0;
     for (i = 0; i < cge_events_count; i++)
     {
         CGE_USER_EVENT *ue = &cge_events[i];
@@ -162,6 +211,31 @@ void cge_update(double dt)
 
         if (ue->type == CGE_MOUSE)
         {
+            if (ue->mouse_bstate == BUTTON1_CLICKED)
+            {
+                if (ue->x > 5 && ue->x < 13 && ue->y > 17 && ue->y < 19)
+                {
+                    auto_move();
+                }
+
+                if (ue->x > 19 && ue->x < 32 && ue->y > 17 && ue->y < 19 && g_model.auto_mode == 1)
+                {
+                    blocks[steps[g_model.step].id].move(steps[g_model.step].move_state);
+                    g_model.step++;
+                    record_blocks();
+                    draw_blocks();
+                }
+            }
+
+            /*if (ue->x > 19 && ue->x < 32 && ue->y > 17 && ue->y < 19)
+            {
+                blocks[3].move(1);
+                //cge_box_mvprintf(game_region, 0, 0, 1, L"AUTO");
+                record_blocks();
+                draw_blocks();
+            }*/
+
+
             if (ue->mouse_bstate == BUTTON1_PRESSED)
             {
                 g_model.x_press = ue->x - 5;
