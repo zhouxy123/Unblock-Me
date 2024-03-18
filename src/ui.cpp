@@ -4,6 +4,7 @@
 #include <vector>
 #include "unblock.h"
 #include <stdlib.h>
+#include <ncurses.h>
 
 using namespace std;
 
@@ -49,6 +50,9 @@ int g_emitter;
 int game_region;
 int auto_play;
 int next_step;
+
+// 鼠标状态
+int button1_down = 0;
 
 // 测试事件
 void emit_handle(void *m)
@@ -238,6 +242,7 @@ void cge_update(double dt)
 
             if (ue->mouse_bstate == BUTTON1_PRESSED)
             {
+                button1_down = 1;
                 g_model.x_press = ue->x - 5;
                 g_model.y_press = ue->y - 2;
                 g_model.id = get_block_id(g_model.x_press, g_model.y_press);
@@ -289,8 +294,10 @@ void cge_update(double dt)
             }
 
             // 0x80000: 按下左键并拖动
-            if (ue->mouse_bstate == 0x80000 && g_model.id >= 0)
+            //if (ue->mouse_bstate == 0x80000 && g_model.id >= 0)
+            if (button1_down == 1 && g_model.id >= 0)
             {
+                //cge_box_mvprintf(game_region, 0, 0, 1, L"A");
                 g_model.x_temp = ue->x - 5;
                 g_model.y_temp = ue->y - 2;
                 x_start_origin = 4 * blocks[g_model.id].x + 1;
@@ -350,8 +357,11 @@ void cge_update(double dt)
             }
 
             // 0x40000: 按下过程中释放
-            if (ue->mouse_bstate == 0x40000)
+            //if (ue->mouse_bstate == 0x40000)
+            if (ue->mouse_bstate == BUTTON1_RELEASED)
             {
+                button1_down = 0;
+                //cge_box_mvprintf(game_region, 0, 0, 1, L"A");
                 g_model.x_release = ue->x - 5;
                 g_model.y_release = ue->y - 2;
 
