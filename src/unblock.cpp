@@ -243,9 +243,9 @@ void record_one_block(Block block, int draw_x_start, int draw_y_start)
 {
     char type;
     if (block.id == 0)
-        type = '&';
+        type = '&'; // 代表主块
     else
-        type = '#';
+        type = '#'; // 代表其他块
 
     int draw_x_end, draw_y_end;
     int i;
@@ -383,7 +383,7 @@ int block_detect(int x, int y, int dir)
         max_step = 25 - x;
         for (i = x + 1; i <= 25; i++)
         {
-            if (box_record[i][y + 1] == '#')
+            if (box_record[i][y + 1] == '#' || box_record[i][y + 1] == '&')
             {
                 max_step = i - x - 1;
                 break;
@@ -395,7 +395,7 @@ int block_detect(int x, int y, int dir)
         max_step = 1 - x;
         for (i = x - 1; i >= 1; i--)
         {
-            if (box_record[i][y + 1] == '#')
+            if (box_record[i][y + 1] == '#' || box_record[i][y + 1] == '&')
             {
                 max_step = i - x + 1;
                 break;
@@ -407,7 +407,7 @@ int block_detect(int x, int y, int dir)
         max_step = 13 - y;
         for (i = y + 1; i <= 13; i++)
         {
-            if (box_record[x + 1][i] == '#')
+            if (box_record[x + 1][i] == '#' || box_record[x + 1][i] == '&')
             {
                 max_step = i - y - 1;
                 break;
@@ -419,7 +419,7 @@ int block_detect(int x, int y, int dir)
         max_step = 1 - y;
         for (i = y - 1; i >= 1; i--)
         {
-            if (box_record[x + 1][i] == '#')
+            if (box_record[x + 1][i] == '#' || box_record[x + 1][i] == '&')
             {
                 max_step = i - y + 1;
                 break;
