@@ -1,14 +1,17 @@
 #include <iostream>
 #include <cstdlib>
 #include <vector>
-#include "unblock.h"
+#include "../include/unblock.h"
+#include "../include/hash_lookup3.h"
 #include <fstream>
 #include <cstring>
+#include <unordered_set>
 using namespace std;
 
 vector<Block> blocks;
 vector<MOVE_STEP> steps;
 vector<vector<int> > status_group;
+unordered_set<uint32_t> status_hash;
 vector<Block> temp_blocks;
 int block_num = 0;
 
@@ -438,35 +441,18 @@ vector<int> get_status()
     return status;
 }
 
-// 对比状态 (=0相同，>0不同)
-int cmp_status(vector<int> status1, vector<int> status2)
-{
-    int result = 0;
-    int i;
-    for (i = 0; i < status1.size(); i++)
-    {
-        if ((status1[i] != status2[i]) || (status1[i + 1] != status2[i + 1]))
-        {
-            result++;
-        }
-        i++;
-    }
-    return result;
-}
-
 // 判断重复状态 (1有重复，0无重复)
+// 利用哈希表重写
 int if_new_status(vector<int> status)
 {
-    int result = 0;
-    for (vector<vector<int> >::iterator it = status_group.begin(); it != status_group.end(); it++)
+    // 利用hashlittle计算数组status的哈希值，判断一个状态是否出现过
+    uint32_t hash = hashlittle(status.data(), status.size() * sizeof(int), 123456);
+    if(status_hash.count(hash)) // 与之前某一状态相同
     {
-        if (cmp_status(status, (*it)) == 0) // 与之前某一状态相同
-        {
-            result = 1;
-            break;
-        }
+        return 1;
     }
-    return result;
+    status_hash.insert(hash);
+    return 0;
 }
 
 // 尝试移动
@@ -530,9 +516,12 @@ int try_move(int id, int move_state)
         blocks[id].move(move_state);
 
         status = get_status();
+        
         // cout<<"if new status "<<if_new_status(status)<<endl;
         if (if_new_status(status) == 0) // 新状态
         {
+            //uint32_t hash = hashlittle(status.data(), status.size(), 123456);
+            //status_hash.insert(hash);
             status_group.push_back(status);
             MOVE_STEP step(id, move_state);
             steps.push_back(step);
@@ -587,6 +576,9 @@ void auto_calculate()
     vector<int> status;
     status = get_status();          // 获取初始状态
     status_group.push_back(status); // 存入状态组中
+    uint32_t hash = hashlittle(status.data(), status.size() * sizeof(int), 123456);
+    status_hash.insert(hash);       // 储存初始状态哈希值
+    
     int end = 0;
     int result;
     int i;
@@ -595,12 +587,12 @@ void auto_calculate()
     int error_count = 0;
 
     save_status(); // 开始自动计算之前先储存当前状态
-    while (1)
+    while (end == 0)
     {
-        if (end == 1)
+        /*if (end == 1)
         {
             break;
-        }
+        }*/
 
         if (fail_count >= block_num * 8)
         {
@@ -621,6 +613,7 @@ void auto_calculate()
             for (i = 0; i <= 7; i++)
             {
                 result = try_move((*it).id, a[i]);
+                //cout<<result<<endl;
                 count++;
 
                 if(try_move(0, 4-blocks[0].x) != 3)
@@ -660,6 +653,7 @@ void auto_calculate()
             if (fail_count >= block_num * 8)
             {
                 //死循环
+                //cout<<"fail"<<endl;
                 break;
             }
         }
