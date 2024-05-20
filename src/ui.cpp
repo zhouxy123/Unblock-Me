@@ -8,7 +8,7 @@
 
 using namespace std;
 
-#define LEVEL "L1"
+#define LEVEL "L2"
 #define EDGE_COLOR 9
 
 // 用于探测
